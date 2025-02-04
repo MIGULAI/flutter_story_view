@@ -25,8 +25,8 @@ class VideoLoader {
       onComplete();
     }
 
-    final fileStream = DefaultCacheManager()
-        .getFileStream(this.url, headers: this.requestHeaders as Map<String, String>?);
+    final fileStream = DefaultCacheManager().getFileStream(this.url,
+        headers: this.requestHeaders as Map<String, String>?);
 
     fileStream.listen((fileResponse) {
       if (fileResponse is FileInfo) {
@@ -45,15 +45,18 @@ class StoryVideo extends StatefulWidget {
   final VideoLoader videoLoader;
   final Widget? loadingWidget;
   final Widget? errorWidget;
-
-  StoryVideo(this.videoLoader, {
+  final bool isMuted;
+  StoryVideo(
+    this.videoLoader, {
     Key? key,
     this.storyController,
     this.loadingWidget,
     this.errorWidget,
+    this.isMuted = false,
   }) : super(key: key ?? UniqueKey());
 
-  static StoryVideo url(String url, {
+  static StoryVideo url(
+    String url, {
     StoryController? controller,
     Map<String, dynamic>? requestHeaders,
     Key? key,
@@ -97,10 +100,21 @@ class StoryVideoState extends State<StoryVideo> {
           setState(() {});
           widget.storyController!.play();
         });
-
+        
+        if (widget.isMuted) {
+          playerController!.setVolume(0);
+        }
         if (widget.storyController != null) {
           _streamSubscription =
               widget.storyController!.playbackNotifier.listen((playbackState) {
+            if (playbackState == PlaybackState.mute) {
+              playerController!.setVolume(0);
+              return;
+            }
+            if (playbackState == PlaybackState.unmute) {
+              playerController!.setVolume(1);
+              return;
+            }
             if (playbackState == PlaybackState.pause) {
               playerController!.pause();
             } else {
@@ -127,22 +141,24 @@ class StoryVideoState extends State<StoryVideo> {
 
     return widget.videoLoader.state == LoadState.loading
         ? Center(
-            child: widget.loadingWidget?? Container(
-              width: 70,
-              height: 70,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 3,
-              ),
-            ),
+            child: widget.loadingWidget ??
+                Container(
+                  width: 70,
+                  height: 70,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    strokeWidth: 3,
+                  ),
+                ),
           )
         : Center(
-            child: widget.errorWidget?? Text(
-            "Media failed to load.",
-            style: TextStyle(
-              color: Colors.white,
-            ),
-          ));
+            child: widget.errorWidget ??
+                Text(
+                  "Media failed to load.",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ));
   }
 
   @override
