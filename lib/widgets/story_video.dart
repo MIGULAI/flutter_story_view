@@ -93,8 +93,9 @@ class StoryVideoState extends State<StoryVideo> {
 
     widget.videoLoader.loadVideo(() {
       if (widget.videoLoader.state == LoadState.success) {
+        bool mixWithOthers = widget.isMuted ? true : false;
         this.playerController =
-            VideoPlayerController.file(widget.videoLoader.videoFile!);
+            VideoPlayerController.file(widget.videoLoader.videoFile!, videoPlayerOptions: VideoPlayerOptions(mixWithOthers: mixWithOthers));
 
         playerController!.initialize().then((v) {
           setState(() {});
